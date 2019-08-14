@@ -356,6 +356,73 @@ class Mv_Megaventory_Helper_Inventories extends Mage_Core_Helper_Abstract
 		return false;
 	}
 	
+	public function updateInventoryProductAlertValue($productId, $inventoryId, $alertValue){
+	
+		if (isset($productId) && isset($inventoryId))
+		{
+			$productStock = Mage::getModel('megaventory/productstocks')
+			->loadInventoryProductstock($inventoryId, $productId);
+			
+			$productStock->setProduct_id($productId);
+			$productStock->setInventory_id($inventoryId);
+			$productStock->setStockalarmqty($alertValue);
+			$productStock->save();
+			
+			$stockItem = Mage::getModel ( 'cataloginventory/stock_item' )->loadByProduct($productId);
+			
+			$productStockCollection = Mage::getModel ( 'megaventory/productstocks' )->loadProductstocks ($productId);
+			
+			$totalAlertQuantity = 0;
+			foreach ( $productStockCollection as $key => $productStock ) {
+				$inventoryAlertQty = $productStock ['stockalarmqty'];
+					
+				$inventory = Mage::getModel ( 'megaventory/inventories' )->load ( $inventoryId );
+				if ($inventory == false)
+					continue;
+					
+				if ($inventory->getCounts_in_total_stock () == '1') {
+					$totalAlertQuantity += $inventoryAlertQty;
+				}
+				Mage::log ( 'total stock after update = ' . $totalStock, null, 'api.log', true );
+				Mage::log ( 'total alert quantity after update = ' . $totalAlertQuantity, null, 'api.log', true );
+			}
+			
+			//update notify quantity
+			$useConfigNotify = $stockItem->getData('use_config_notify_stock_qty');
+			$configValue = Mage::getStoreConfig('cataloginventory/item_options/notify_stock_qty');
+			
+			if ($useConfigNotify == '1'){
+				if (isset($configValue)){
+					if ($configValue != $totalAlertQuantity){
+						$stockItem->setData('use_config_notify_stock_qty',0);
+					}
+				}
+			}
+			else
+			{
+				if (isset($configValue)){
+					if ($configValue == $totalAlertQuantity){
+						$stockItem->setData('use_config_notify_stock_qty',1);
+					}
+				}
+			}
+			
+			$stockItem->setData('notify_stock_qty',$totalAlertQuantity);
+			$stockItem->save();
+			//end of notify quantity
+			
+			return array(
+					'totalAlertQuantity' => $totalAlertQuantity,
+					'isConfig' => ($totalAlertQuantity == $configValue) ? true : false
+					);
+		}
+	
+		return array(
+					'totalAlertQuantity' => 0,
+					'isConfig' => false
+					);
+	}
+	
 	public function updateCountsInStock($inventoryId, $bCount){
 		$inventory = Mage::getModel('megaventory/inventories')->load($inventoryId);
 		$bCount == 'true' ? $countsInStock = '1' : $countsInStock = '0';
@@ -508,7 +575,14 @@ class Mv_Megaventory_Helper_Inventories extends Mage_Core_Helper_Abstract
 					$inventoryStockData['stockwipcomponentqty'] = 0;
 					$inventoryStockData['stocknonreceivedwoqty'] = $warehouseStock['StockNonReceivedWOs'];
 					$inventoryStockData['stockalarmqty'] = $warehouseStock['StockAlertLevel'];
-					$inventory = Mage::getModel('megaventory/inventories')->load($warehouseStock['warehouseID'], 'megaventory_id');
+					
+					//warehouseID changed in megaventory API v2
+					//we need to be compliant with both versions
+					$locationId = $warehouseStock['warehouseID'];
+					if (!isset($locationId)){ //v2 api
+						$locationId = $warehouseStock['InventoryLocationID'];
+					}
+					$inventory = Mage::getModel('megaventory/inventories')->load($locationId, 'megaventory_id');
 					$inventoryId = $inventory->getData('id');
 					$this->updateInventoryProductStock($pId,$inventoryId,$inventoryStockData);
 					

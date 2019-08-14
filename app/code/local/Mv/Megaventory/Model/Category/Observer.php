@@ -19,9 +19,9 @@ class Mv_Megaventory_Model_Category_Observer {
 			$action = 'Insert';
 		}
 		
-		
-		if ($category->getIsActive())
-		{
+		//deprecated as of v 2.1
+		//if ($category->getIsActive())
+		//{
 		
 			$helper = Mage::helper('megaventory');
 			
@@ -62,17 +62,17 @@ class Mv_Megaventory_Model_Category_Observer {
 			{
 				$this->updateCategoriesRecursively($category);
 			}
-		}
-		else //if user disables a category 
+		//}
+		//else //if user disables a category 
 			//we should delete the megaventory category
-		{
+		//{
 			//no update just delete the current category not
 			//its children
-			if (strcmp ( $action, "Update" ) == 0)
+		/* 	if (strcmp ( $action, "Update" ) == 0)
 			{
 				$this->deleteCategory($category);
 			}
-		}
+		} */
 	
 	}
 	

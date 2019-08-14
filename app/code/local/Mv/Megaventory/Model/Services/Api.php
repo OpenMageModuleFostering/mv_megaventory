@@ -83,10 +83,12 @@ class Mv_Megaventory_Model_Services_Api extends Mage_Api_Model_Resource_Abstract
 			Mage::log ( 'product id in inventory stock = ' . $pId, null, 'api.log', true );
 			$productStockCollection = Mage::getModel ( 'megaventory/productstocks' )->loadProductstocks ( $pId );
 			$totalStock = 0;
+			$totalAlertQuantity = 0;
 			foreach ( $productStockCollection as $key => $productStock ) {
 				$inventoryStock = $productStock ['stockqty'];
 				$inventoryNonShippedStock = $productStock ['stocknonshippedqty'];
 				$inventoryNonAllocatedWOStock = $productStock ['stocknonallocatedwoqty'];
+				$inventoryAlertQty = $productStock ['stockalarmqty'];
 				
 				$inventoryId = $productStock ['inventory_id'];
 				$inventory = Mage::getModel ( 'megaventory/inventories' )->load ( $inventoryId );
@@ -103,14 +105,38 @@ class Mv_Megaventory_Model_Services_Api extends Mage_Api_Model_Resource_Abstract
 					{
 						$totalStock += $inventoryStock - $inventoryNonShippedStock - $inventoryNonAllocatedWOStock;
 					}
+					
+					$totalAlertQuantity += $inventoryAlertQty;
 				}
 				Mage::log ( 'total stock after update = ' . $totalStock, null, 'api.log', true );
+				Mage::log ( 'total alert quantity after update = ' . $totalAlertQuantity, null, 'api.log', true );
 			}
 			$stockItem = Mage::getModel ( 'cataloginventory/stock_item' )->loadByProduct ( $pId );
 			Mage::log ( 'stock item id = ' . $stockItem->getId (), null, 'api.log', true );
 			$stockItem->setQty ( $totalStock );
 			if ($totalStock > $stockItem->getMinQty ())
 				$stockItem->setData ( 'is_in_stock', 1 );
+			
+			//update notify quantity
+			$useConfigNotify = $stockItem->getData('use_config_notify_stock_qty');
+			$configValue = Mage::getStoreConfig('cataloginventory/item_options/notify_stock_qty');
+			if ($useConfigNotify == '1'){
+				if (isset($configValue)){
+					if ($configValue != $totalAlertQuantity){
+						$stockItem->setData('use_config_notify_stock_qty',0);
+					}
+				}
+			}
+			else
+			{
+				if (isset($configValue)){
+					if ($configValue == $totalAlertQuantity){
+						$stockItem->setData('use_config_notify_stock_qty',1);
+					}
+				}
+			}
+			$stockItem->setData('notify_stock_qty',$totalAlertQuantity);
+			//end of notify quantity
 			
 			Varien_Profiler::start ( 'savestock' );
 			$stockItem->save ();

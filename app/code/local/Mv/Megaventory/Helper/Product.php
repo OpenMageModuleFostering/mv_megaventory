@@ -27,14 +27,6 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		$productType = $product->getType_id();
 		if ($productType == Mage_Catalog_Model_Product_Type::TYPE_SIMPLE || $productType == Mage_Catalog_Model_Product_Type::TYPE_VIRTUAL)
 		{
-			//$stock_data = $product->getStockData();
-			/* $stockItem = $product->getStock_item();
-			$quantity = '0';
-			if (isset($stockItem))
-				$quantity = $stockItem->getQty();
-			
-			else if (isset($product['quantity']))
-				$quantity = $product['quantity']; */
 			
 			$productId = $product->getEntityId();
 			$megaVentoryId = $product->getData('mv_product_id');
@@ -57,6 +49,80 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 			if (!empty($product['cost']))
 				$cost = $product['cost'];
 			
+			$helper = Mage::helper('megaventory');
+			
+			//pass supplier on the fly
+			$mvSupplierId = '';
+			
+			$supplierAttributeCode =  Mage::getStoreConfig('megaventory/general/supplierattributecode');
+			
+			if (isset($supplierAttributeCode)){
+				$attribute = Mage::getModel('eav/entity_attribute')->loadByCode('catalog_product',$supplierAttributeCode);
+				$frontendInput = $attribute->getFrontendInput();
+	
+				$magentoSupplierId = $product->getData($supplierAttributeCode);
+				
+				if ($frontendInput == 'text')
+					$supplierName = $magentoSupplierId;
+				else if ($frontendInput == 'select')
+					$supplierName = $product->getAttributeText($supplierAttributeCode);
+				
+				if (isset($magentoSupplierId) && ($frontendInput == 'text' || $frontendInput == 'select')){
+					
+					Mage::log('supplier name = '.$supplierName,null,'megaventory.log');
+				
+					if ($supplierName){
+						
+						$supplierData = array
+						(
+								'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+								'query'=> 'mv.SupplierClientName = "'.$supplierName.'"'
+						);
+					
+						$json_result = $helper->makeJsonRequest($supplierData ,'SupplierClientGet');
+						$errorCode = $json_result['ResponseStatus']['ErrorCode'];
+						if ($errorCode == '0'){//no errors
+							
+							//supplier exists
+							if (count($json_result['mvSupplierClients']) > 0){
+								$mvSupplierId = $json_result['mvSupplierClients'][0]['SupplierClientID'];
+							}
+							else //supplier is new
+							{
+								$supplierData = array
+								(
+										'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+										'mvSupplierClient' => array (
+												'SupplierClientID' => 0,
+												'SupplierClientType' => '1',
+												'SupplierClientName' => $supplierName,
+												'SupplierClientBillingAddress' => '',
+												'SupplierClientShippingAddress1' => '',
+												'SupplierClientShippingAddress2' => '',
+												'SupplierClientPhone1' => '',
+												'SupplierClientPhone2' => '',
+												'SupplierClientFax' => '',
+												'SupplierClientIM' => '',
+												'SupplierClientEmail' => '',
+												'SupplierClientTaxID' => '',
+												'SupplierClientComments' => '',
+						 						),
+										'mvRecordAction' => 'Insert' 
+								);
+				
+								$json_result = $helper->makeJsonRequest($supplierData, 'SupplierClientUpdate',0);
+								
+								$errorCode = $json_result['ResponseStatus']['ErrorCode'];
+								if ($errorCode == '0'){//no errors
+									$mvSupplierId = $json_result['mvSupplierClient']['SupplierClientID'];
+								}
+							}
+						}
+					
+						Mage::log('mv supplier id = '.$mvSupplierId,null,'megaventory.log');
+					}
+				}
+			}
 			
 			$version = '';
 			$parentIds = Mage::getResourceSingleton('catalog/product_type_configurable') ->getParentIdsByChild($productId);
@@ -172,7 +238,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 							'ProductCustomField1'=>$attributeSetName,
 							'ProductCustomField2'=>'',
 							'ProductCustomField3'=>'',
-							'ProductMainSupplierID'=>'0',
+							'ProductMainSupplierID'=>$mvSupplierId,
 							'ProductMainSupplierPrice'=>'0',
 							'ProductMainSupplierSKU'=>'',
 							'ProductMainSupplierDescription'=>'',
@@ -181,7 +247,6 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 					'mvRecordAction'=>$mvRecordAction
 			);
 			
-			$helper = Mage::helper('megaventory');
 			$json_result = $helper->makeJsonRequest($data ,'ProductUpdate',$productId);
 		
 		
@@ -190,6 +255,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 				if (strcmp('Insert', $mvRecordAction) == 0){
 					$this->updateProduct($productId,$json_result['mvProduct']['ProductID']);
 				}
+				
 				return $json_result['mvProduct']['ProductID'];
 			}
 			else
@@ -493,10 +559,10 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 			}
 		}
 		if ($isLastPage){
-			$message = $total.'/'.$totalCollectionSize.' products synchronized'.Mage::registry('tickImage');
+			$message = $total.'/'.$totalCollectionSize.' products imported'.Mage::registry('tickImage');
 			if ($total != $totalCollectionSize){
 				$logUrl = Mage::helper("adminhtml")->getUrl("megaventory/index/log");
-				$message .= '<br>'.$totalCollectionSize-$total.' product(s) were not synchronized. Check <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details'.Mage::registry('errorImage');
+				$message .= '<br>'.$totalCollectionSize-$total.' product(s) were not imported. Check <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details'.Mage::registry('errorImage');
 			}
 			$megaventoryHelper->sendProgress(31, $message, $page, 'products', true);
 			return false;
@@ -539,6 +605,80 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		else
 			$cost = $product['cost'];
 			
+		//pass supplier on the fly
+		$helper = Mage::helper('megaventory');
+		$mvSupplierId = '';
+			
+		$supplierAttributeCode =  Mage::getStoreConfig('megaventory/general/supplierattributecode');
+			
+		if (isset($supplierAttributeCode)){
+			$attribute = Mage::getModel('eav/entity_attribute')->loadByCode('catalog_product',$supplierAttributeCode);
+			$frontendInput = $attribute->getFrontendInput();
+		
+			$magentoSupplierId = $product->getData($supplierAttributeCode);
+		
+			if ($frontendInput == 'text')
+				$supplierName = $magentoSupplierId;
+			else if ($frontendInput == 'select')
+				$supplierName = $product->getAttributeText($supplierAttributeCode);
+		
+			if (isset($magentoSupplierId) && ($frontendInput == 'text' || $frontendInput == 'select')){
+					
+				Mage::log('supplier name = '.$supplierName,null,'megaventory.log');
+		
+				if ($supplierName){
+		
+					$supplierData = array
+					(
+							'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+							'query'=> 'mv.SupplierClientName = "'.$supplierName.'"'
+					);
+						
+					$json_result = $helper->makeJsonRequest($supplierData ,'SupplierClientGet');
+					$errorCode = $json_result['ResponseStatus']['ErrorCode'];
+					if ($errorCode == '0'){//no errors
+							
+						//supplier exists
+						if (count($json_result['mvSupplierClients']) > 0){
+							$mvSupplierId = $json_result['mvSupplierClients'][0]['SupplierClientID'];
+						}
+						else //supplier is new
+						{
+							$supplierData = array
+							(
+									'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+									'mvSupplierClient' => array (
+											'SupplierClientID' => 0,
+											'SupplierClientType' => '1',
+											'SupplierClientName' => $supplierName,
+											'SupplierClientBillingAddress' => '',
+											'SupplierClientShippingAddress1' => '',
+											'SupplierClientShippingAddress2' => '',
+											'SupplierClientPhone1' => '',
+											'SupplierClientPhone2' => '',
+											'SupplierClientFax' => '',
+											'SupplierClientIM' => '',
+											'SupplierClientEmail' => '',
+											'SupplierClientTaxID' => '',
+											'SupplierClientComments' => '',
+									),
+									'mvRecordAction' => 'Insert'
+							);
+		
+							$json_result = $helper->makeJsonRequest($supplierData, 'SupplierClientUpdate',0);
+		
+							$errorCode = $json_result['ResponseStatus']['ErrorCode'];
+							if ($errorCode == '0'){//no errors
+								$mvSupplierId = $json_result['mvSupplierClient']['SupplierClientID'];
+							}
+						}
+					}
+						
+					Mage::log('mv supplier id = '.$mvSupplierId,null,'megaventory.log');
+				}
+			}
+		}
+		
 		$version = '';
 		$parentIds = Mage::getResourceSingleton('catalog/product_type_configurable') ->getParentIdsByChild($productId);
 		if (isset($parentIds) && isset($parentIds[0]))
@@ -641,7 +781,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 						'ProductCustomField1'=>$attributeSetName,
 						'ProductCustomField2'=>'',
 						'ProductCustomField3'=>'',
-						'ProductMainSupplierID'=>'0',
+						'ProductMainSupplierID'=> $mvSupplierId,
 						'ProductMainSupplierPrice'=>'0',
 						'ProductMainSupplierSKU'=>'',
 						'ProductMainSupplierDescription'=>'',
@@ -650,7 +790,6 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 				'mvRecordAction'=>$mvRecordAction
 		);
 			
-		$helper = Mage::helper('megaventory');
 		$json_result = $helper->makeJsonRequest($data ,'ProductUpdate',$productId);
 		
 		
@@ -658,6 +797,54 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		if ($errorCode == '0'){//no errors
 			if (strcmp('Insert', $mvRecordAction) == 0){
 				$this->updateProduct($productId,$json_result['mvProduct']['ProductID']);
+				$mvProductId = $json_result['mvProduct']['ProductID'];
+				
+				//update alert level
+				$stockItem = $product->getStock_item();
+				$quantity = '0';
+				$alertLevel = 0;
+				
+				if (isset($stockItem)){
+					$useConfigNotify = $stockItem->getData('use_config_notify_stock_qty');
+					if ($useConfigNotify == '1'){
+						//get config value
+						$configValue = Mage::getStoreConfig('cataloginventory/item_options/notify_stock_qty');
+						if (isset($configValue))
+							$alertLevel = $configValue;
+						else
+							$alertLevel = 0;
+					}
+					else{
+						$alertLevel = $stockItem->getData('notify_stock_qty');
+					}
+				}
+				
+				$inventory = Mage::getModel('megaventory/inventories')->loadDefault();
+				
+				$alertData = array
+				(
+						'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+						'mvProductStockAlertsAndSublocationsList'=> array
+						(
+								'productID' => $mvProductId,
+								'mvInventoryLocationStockAlertAndSublocations' => array(
+										'InventoryLocationID' => $inventory->getData('megaventory_id'),
+										'StockAlertLevel' => $alertLevel
+								)
+									
+						)
+				);
+				
+				$helper->makeJsonRequest($alertData ,'InventoryLocationStockAlertAndSublocationsUpdate');
+				
+				$productStock = Mage::getModel('megaventory/productstocks')
+				->loadInventoryProductstock($inventory->getId(), $product->getId());
+					
+				$productStock->setProduct_id($productId);
+				$productStock->setInventory_id($inventory->getId());
+				$productStock->setStockalarmqty($alertLevel);
+				$productStock->save();
+				
 			}
 		}
 		else
@@ -665,9 +852,60 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 			$entityId = $json_result['entityID']; //if product exists just sync them
 			if (!empty($entityId) && $entityId > 0){
 				$this->updateProduct($productId,$entityId);
+				$mvProductId = $entityId;
+				
+				//update alert level
+				$stockItem = $product->getStock_item();
+				$quantity = '0';
+				$alertLevel = 0;
+				
+				if (isset($stockItem)){
+					$useConfigNotify = $stockItem->getData('use_config_notify_stock_qty');
+					if ($useConfigNotify == '1'){
+						//get config value
+						$configValue = Mage::getStoreConfig('cataloginventory/item_options/notify_stock_qty');
+						if (isset($configValue))
+							$alertLevel = $configValue;
+						else
+							$alertLevel = 0;
+					}
+					else{
+						$alertLevel = $stockItem->getData('notify_stock_qty');
+					}
+				}
+				
+				$inventory = Mage::getModel('megaventory/inventories')->loadDefault();
+				
+				$alertData = array
+				(
+						'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+						'mvProductStockAlertsAndSublocationsList'=> array
+						(
+								'productID' => $mvProductId,
+								'mvInventoryLocationStockAlertAndSublocations' => array(
+										'InventoryLocationID' => $inventory->getData('megaventory_id'),
+										'StockAlertLevel' => $alertLevel
+								)
+									
+						)
+				);
+				
+				$helper->makeJsonRequest($alertData ,'InventoryLocationStockAlertAndSublocationsUpdate');
+				
+				$productStock = Mage::getModel('megaventory/productstocks')
+				->loadInventoryProductstock($inventory->getId(), $product->getId());
+					
+				$productStock->setProduct_id($productId);
+				$productStock->setInventory_id($inventory->getId());
+				$productStock->setStockalarmqty($alertLevel);
+				$productStock->save();
+				
+				
 				return 1;
 			}
 		}
+		
+		
 		
 		return $errorCode;
 	}

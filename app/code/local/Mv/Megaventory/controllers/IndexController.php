@@ -74,9 +74,43 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		$config->saveConfig('megaventory/general/shippingproductsku',$shippingSKU);
 		$config->saveConfig('megaventory/general/discountproductsku',$discountSKU);
 	
+		//add supplier attribute in config data
+		$magentoSupplierAttributeCode = $this->getRequest()->getPost('magento_supplier_code');
+		
+		if (!empty($magentoSupplierAttributeCode)){
+			$attribute = Mage::getModel('eav/entity_attribute')->loadByCode('catalog_product',$magentoSupplierAttributeCode);
+			
+			if (!$attribute->getId())
+			{
+				$result = array(
+						'attribute_code'=>'notok',
+						'message'=>'There is no attribute with this code'
+						);
+				echo json_encode($result) . PHP_EOL;
+				die();
+			}
+			
+			$frontendInput = $attribute->getFrontendInput();
+			
+			if ($frontendInput != 'text' && $frontendInput != 'select'){
+				$result = array(
+						'attribute_code'=>'notok',
+						'message'=>'Supplier attribute must be of frontend type Text or Dropdown'
+						);
+				echo json_encode($result) . PHP_EOL;
+				die();
+			}
+				
+			$config->saveConfig('megaventory/general/supplierattributecode',$magentoSupplierAttributeCode);
+		}
+		
 		//unfortunately
 		$config->reinit();
 	
+		$result = array(
+				'attribute_code'=>'ok'
+		);
+		echo json_encode($result) . PHP_EOL;
 		die();
 	}
 	
@@ -117,7 +151,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 				$settingValue = $accountSetting['SettingValue'];
 				if ($settingName == 'isMagentoModuleEnabled' && $settingValue == false)
 					$message .= 'Magento module is not enabled.';
-				if ($settingName == 'MagentoEndPointURL'){
+				/* if ($settingName == 'MagentoEndPointURL'){
 					$host = parse_url($settingValue,PHP_URL_HOST);
 					$magentoHost = $_SERVER['HTTP_HOST'];
 					if ($host != $magentoHost)
@@ -133,7 +167,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 							$message .= sprintf('Magento username %s does not exist.',$settingValue);
 						}
 					}
-				}
+				} */
 				if ($settingName == 'isOrdersModuleEnabled' && $settingValue == false)
 					$message .= 'Orders module is not enabled.';
 				if ($settingName == 'isWorksModuleEnabled ' && $settingValue == false)
@@ -151,6 +185,44 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		$result = array('connectivity'=>'ok');
 		echo json_encode($result) . PHP_EOL;
 		
+		die();
+	}
+	
+	
+	public function updateSupplierSettingsAction()
+	{
+		$magentoSupplierAttributeCode = $this->getRequest()->getPost('magento_supplier_code');
+		$config = Mage::getConfig();
+		if (!empty($magentoSupplierAttributeCode)){
+			$attribute = Mage::getModel('eav/entity_attribute')->loadByCode('catalog_product',$magentoSupplierAttributeCode);
+			
+			if (!$attribute->getId())
+			{
+				$result = array(
+						'attribute_code'=>'notok',
+						'message'=>'There is no attribute with this code'
+						);
+				echo json_encode($result) . PHP_EOL;
+				die();
+			}
+			
+			$frontendInput = $attribute->getFrontendInput();
+			
+			if ($frontendInput != 'text' && $frontendInput != 'select'){
+				$result = array(
+						'attribute_code'=>'notok',
+						'message'=>'Supplier attribute must be of frontend type Text or Dropdown'
+						);
+				echo json_encode($result) . PHP_EOL;
+				die();
+			}
+				
+			$config->saveConfig('megaventory/general/supplierattributecode',$magentoSupplierAttributeCode);
+		}
+		else //delete it
+		{
+			$config->deleteConfig('megaventory/general/supplierattributecode');
+		}
 		die();
 	}
 	
@@ -253,7 +325,6 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 			//first reset and then do it all from the beginning
 			$megaventoryHelper->resetMegaventoryData();
 			
-			
 			$megaventoryHelper->sendProgress(1, '<strong>Step 1/'.$totalSteps.'</strong> Getting Inventory Locations from Megaventory', '0', 'inventories', false);
 			
 			$count = $inventoriesHelper->initializeInventoryLocations();
@@ -293,7 +364,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 				echo json_encode($result);
 				die();
 			}
-			$megaventoryHelper->sendProgress(11, 'Shipping Product synchronized successfully!', '0', 'shippingproduct',true);
+			$megaventoryHelper->sendProgress(11, 'Shipping Product added successfully!', '0', 'shippingproduct',true);
 			
 			$createdMessage = $productHelper->addDiscountProduct($megaventoryHelper);
 			if ($createdMessage !== true)
@@ -304,7 +375,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 				echo json_encode($result);
 				die();
 			}
-			$megaventoryHelper->sendProgress(12, 'Discount Product synchronized successfully!', '0', 'discountproduct',true);
+			$megaventoryHelper->sendProgress(12, 'Discount Product added successfully!', '0', 'discountproduct',true);
 			$customerHelper->addDefaultGuestCustomer($megaventoryHelper);
 			$currenciesHelper->addMagentoCurrencies($megaventoryHelper);
 			$taxesHelper->synchronizeTaxes($megaventoryHelper);
@@ -316,7 +387,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		}
 		else if ($syncStep == 'categories'){
 			if ($page == '1')
-				$megaventoryHelper->sendProgress(20, '<br><strong>Step 3/'.$totalSteps.'</strong> Synchronizing Categories..', '0', 'categories', false);
+				$megaventoryHelper->sendProgress(20, '<br><strong>Step 3/'.$totalSteps.'</strong> Importing Categories to Megaventory..', '0', 'categories', false);
 			
 			$import = $categoryHelper->importCategoriesToMegaventory($megaventoryHelper,$page, $imported);
 			
@@ -338,7 +409,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		}
 		else if ($syncStep == 'products'){
 			if ($page == '1')
-				$megaventoryHelper->sendProgress(30, '<br><strong>Step 4/'.$totalSteps.'</strong> Synchronizing Products..', '0', 'products' ,false);
+				$megaventoryHelper->sendProgress(30, '<br><strong>Step 4/'.$totalSteps.'</strong> Importing Products to Megaventory..', '0', 'products' ,false);
 			
 			$import = $productHelper->importProductsToMegaventory($megaventoryHelper,$page,$imported);
 			
@@ -382,7 +453,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		} */
 		else if ($syncStep == 'finishing'){
 			$syncTimestamp = time();
-			$megaventoryHelper->sendProgress(40, '<br>Synchronization finished successfully at '.date(DATE_RFC2822,$syncTimestamp), '0', 'finish',true);
+			$megaventoryHelper->sendProgress(40, '<br>Entity import finished successfully at '.date(DATE_RFC2822,$syncTimestamp), '0', 'finish',true);
 			$megaventoryHelper->sendProgress(41, 'Saving Set up data for later reference!', '0', 'saveddata',false);
 			
 			$megaventoryHelper->sendProgress(42, 'Done!'.Mage::registry('tickImage'), '0', 'done',false);
@@ -427,7 +498,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		}
 		else if ($syncStep == 'error'){
 			//$syncTimestamp = time();
-			$megaventoryHelper->sendProgress(90, '<br>Synchronization did not finish succesfully.', '0', 'finisherror',true);
+			$megaventoryHelper->sendProgress(90, '<br>Entity import did not finish succesfully.', '0', 'finisherror',true);
 			$megaventoryHelper->sendProgress(100, 'Please refresh page and try again!', '0', 'done',false);
 			$resource = Mage::getSingleton ( 'core/resource' );
 			$read = $resource->getConnection ( 'core/read' );
@@ -456,6 +527,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		Mage::getConfig()->deleteConfig('megaventory/general/synctimestamp/');
 		Mage::getConfig()->deleteConfig('megaventory/general/shippingproductsku');
 		Mage::getConfig()->deleteConfig('megaventory/general/discountproductsku');
+		Mage::getConfig()->deleteConfig('megaventory/general/supplierattributecode');
 		Mage::getConfig()->deleteConfig('megaventory/general/defaultguestid');
 		Mage::getConfig()->deleteConfig('megaventory/general/setupreport');
 		Mage::getConfig()->deleteConfig('megaventory/general/ordersynchronization');
@@ -607,7 +679,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 						$mvInventoryId = $data['mvSalesOrder']['SalesOrderInventoryLocationID'];
 						$inventory = Mage::helper('megaventory/inventories')->getInventoryFromMegaventoryId($mvInventoryId);
 						if ($inventory){
-							$orderAdded->setData('mv_salesorder_id',$json_result['result']['SalesOrderNo']);
+							$orderAdded->setData('mv_salesorder_id',$json_result['mvSalesOrder']['SalesOrderNo']);
 							$orderAdded->setData('mv_inventory_id',$inventory->getData('id'));
 							$orderAdded->save();
 						}
@@ -1128,5 +1200,39 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		Mage::register('current_convert_profile', $profile);
 	
 		return $this;
+	}
+	
+	public function updateAlertLevelAction() {
+		$mvInventoryId = $this->getRequest()->getParam('mv_inventory_id');
+		$productId = $this->getRequest()->getParam('magento_product_id');
+		$mvProductId = $this->getRequest()->getParam('mv_product_id');
+		$alertLevel = $this->getRequest()->getParam('alertlevel');
+		
+
+		$megaventoryHelper = Mage::helper('megaventory');
+		
+		$alertData = array
+		(
+				'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+				'mvProductStockAlertsAndSublocationsList'=> array
+				(
+						'productID' => $mvProductId,
+						'mvInventoryLocationStockAlertAndSublocations' => array(
+								'InventoryLocationID' => $mvInventoryId,
+								'StockAlertLevel' => $alertLevel
+						)
+							
+				)
+		);
+		
+		$json_result = $megaventoryHelper->makeJsonRequest($alertData ,'InventoryLocationStockAlertAndSublocationsUpdate');
+		$errorCode = $json_result['ResponseStatus']['ErrorCode'];
+		
+		if ($errorCode == '0'){
+			$inventories = Mage::helper ( 'megaventory/inventories' );
+			$magentoInventoryId = $inventories->getInventoryFromMegaventoryId($mvInventoryId)->getId();
+			echo json_encode($inventories->updateInventoryProductAlertValue($productId, $magentoInventoryId, $alertLevel));
+			die();
+		}
 	}
 }

@@ -83,14 +83,14 @@ class Mv_Megaventory_Helper_Category extends Mage_Core_Helper_Abstract
 		}
 		if ($isLastPage){
 			//$megaventoryHelper->sendProgress(22, $total.'/'.$totalCollectionSize.' categories synchronized'.Mage::registry('tickImage'), '0', 'categories',true);
-			$message = $total.'/'.$totalCollectionSize.' categories synchronized'.Mage::registry('tickImage');
+			$message = $total.'/'.$totalCollectionSize.' categories imported'.Mage::registry('tickImage');
 			if ($total != $totalCollectionSize){
 				$dif = $totalCollectionSize-$total;
 				$logUrl = Mage::helper("adminhtml")->getUrl("megaventory/index/log");
 				if ($dif == 1)
-					$message .= '<br>'.$dif.' category was not synchronized. Check <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details'.Mage::registry('errorImage');
+					$message .= '<br>'.$dif.' category was not imported. Check <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details'.Mage::registry('errorImage');
 				else
-					$message .= '<br>'.$dif.' categories were not synchronized. Check <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details'.Mage::registry('errorImage');
+					$message .= '<br>'.$dif.' categories were not imported. Check <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details'.Mage::registry('errorImage');
 			}
 			$megaventoryHelper->sendProgress(21, $message, $page, 'categories', true);
 			

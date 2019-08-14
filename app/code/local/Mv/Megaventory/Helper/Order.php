@@ -406,7 +406,7 @@ class Mv_Megaventory_Helper_Order extends Mage_Core_Helper_Abstract
 		
 		$errorCode = $json_result['ResponseStatus']['ErrorCode'];
 		if ($errorCode == '0'){//no errors
-			$orderAdded->setData('mv_salesorder_id',$json_result['result']['SalesOrderNo']);
+			$orderAdded->setData('mv_salesorder_id',$json_result['mvSalesOrder']['SalesOrderNo']);
 			$orderAdded->setData('mv_inventory_id',$inventory->getData('id'));
 			$orderAdded->save();
 			

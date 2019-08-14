@@ -196,9 +196,10 @@ if ($megaventoryIntegration == '1') */
 if (Mv_Megaventory_Helper_Common::isMegaventoryEnabled())
 {
 $inventories = $this->getInventories();
+$mvProductId = $this->getProduct()->getData('mv_product_id');
 ?>
 
-<?php if( $this->getProduct()->getTypeId() == 'simple' ): ?>
+<?php if( $this->getProduct()->getTypeId() == 'simple' && !empty($mvProductId)) : ?>
 	<div id="product_info_tabs_inventory_content" style=""><div class="entry-edit">
 	    <div class="entry-edit-head">
 	        <h4 class="icon-head head-edit-form fieldset-legend">Megaventory Stock Values</h4>
@@ -251,7 +252,12 @@ $inventories = $this->getInventories();
 				            </td>
 				            <?php endif;?>
 				            <td class="value">
-				            	<?php echo round($productStock->getStockalarmqty(),2) ?>
+				            	<input style="width:50px;" type="text" name="alertQty" onchange="changeAlertLevel(this,<?php echo $inventory->getData('megaventory_id'); ?>)"
+				            	value="<?php echo round($productStock->getStockalarmqty(),2) ?>">
+				            	<img id="loader_<?php echo $inventory->getData('megaventory_id');?>" 
+				            	src="<?php echo Mage::getDesign()->getSkinUrl('images/megaventory/smallloader.gif')?>" style="border-width:0px;display:none;vertical-align:middle;">
+				            	<img id="ok_<?php echo $inventory->getData('megaventory_id');?>" 
+				            	src="<?php echo Mage::getDesign()->getSkinUrl('images/megaventory/accept.png')?>" style="border-width:0px;display:none;vertical-align:middle;">
 				            </td>
 				        </tr>
 						<?php endforeach; ?>
@@ -340,6 +346,39 @@ $inventories = $this->getInventories();
             Event.observe($('inventory_is_qty_decimal'), 'change', applyEnableDecimalDivided);
             applyEnableDecimalDivided();
         }
+        
+<?php if (!empty($mvProductId)) { ?>
+
+        $('inventory_notify_stock_qty').disable();
+    	$('inventory_notify_stock_qty').addClassName('disabled');
+    	$('inventory_use_config_notify_stock_qty').disable();
+    	
+<?php }?>
+    	
     });
+
+    function changeAlertLevel(elem,inventoryId){
+    	$('ok_'+inventoryId).hide();
+        $('loader_'+inventoryId).show();
+    	url = "<?php echo Mage::helper("adminhtml")->getUrl("megaventory/index/updateAlertLevel") ?>";
+    	new Ajax.Request(url, {
+    		parameters:  
+    			{
+    				'mv_inventory_id' : inventoryId,
+    				'magento_product_id' : <?php echo $this->getProduct()->getId() ?>,
+					'mv_product_id' : <?php echo $this->getProduct()->getData('mv_product_id') ?>,
+    				'alertlevel' : elem.value
+    			},
+            onSuccess: function(transport) {
+            	$('loader_'+inventoryId).hide();
+            	$('ok_'+inventoryId).show();
+            	var result = transport.responseText.evalJSON();
+            	$('inventory_notify_stock_qty').value = result.totalAlertQuantity;
+            	$('inventory_notify_stock_qty').disable();
+            	$('inventory_notify_stock_qty').addClassName('disabled');
+            	$('inventory_use_config_notify_stock_qty').checked = result.isConfig;
+            }
+        });
+    }
 //]]>
 </script>
