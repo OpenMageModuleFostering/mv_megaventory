@@ -25,17 +25,22 @@ class Mv_Megaventory_Model_Observer
 		
 	}
 	
-	//updates magento data asyncrhrously
+	//updates magento data asynchronously
 	//receives input by polling megaventory integration updates API
 	public function update()
 	{
 		Mage::log('update run',null,'mv_cron.log');
 		
 		$key = Mage::getStoreConfig('megaventory/general/apikey');
+		
+		$magentoId = Mage::getStoreConfig('megaventory/general/magentoid');
+		if (!isset($magentoId))
+			$magentoId = "magento";
 			
 		$data = array
 		(
-				'APIKEY' => $key
+				'APIKEY' => $key,
+				'query' => 'mv.Application = "'.$magentoId.'"'
 		);
 			
 		$helper = Mage::helper('megaventory');

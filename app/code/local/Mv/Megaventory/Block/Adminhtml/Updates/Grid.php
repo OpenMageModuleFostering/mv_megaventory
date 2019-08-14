@@ -109,9 +109,14 @@ class Mv_Megaventory_Block_Adminhtml_Updates_Grid extends Mage_Adminhtml_Block_W
 		
 		$key = Mage::getStoreConfig('megaventory/general/apikey');
 			
+		$magentoId = Mage::getStoreConfig('megaventory/general/magentoid');
+		if (!isset($magentoId))
+			$magentoId = "magento";
+			
 		$data = array
 		(
-				'APIKEY' => $key
+				'APIKEY' => $key,
+				'query' => 'mv.Application = "'.$magentoId.'"'
 		);
 			
 		$helper = Mage::helper('megaventory');

@@ -333,16 +333,27 @@ class Mv_Megaventory_Helper_Customer extends Mage_Core_Helper_Abstract
 					$this->updateCustomer($customer->getId(), $json_result ['mvSupplierClient'] ['SupplierClientID']);
 					return $json_result ['mvSupplierClient'] ['SupplierClientID'];
 				}
+				return $json_result['entityID'];
 			}
 			else
 			{
 				$entityId = $json_result['entityID']; 
 				if (!empty($entityId) && $entityId > 0){
-					$this->updateCustomer($customer->getId(), $entityId);
-					$data['mvSupplierClient']['SupplierClientID'] = $entityId;
-					$data['mvRecordAction'] = 'Update';
-					$json_result = $helper->makeJsonRequest($data ,'SupplierClientUpdate',$customer->getId());
-					return $entityId;
+					if (strpos( $json_result['ResponseStatus']['Message'], 'and was since deleted') !== false) {
+						$result = array(
+								'mvCustomerId' => $json_result['entityID'],
+								'errorcode' => 'isdeleted'
+						);
+						return $result;
+					}
+					else
+					{
+						$this->updateCustomer($customer->getId(), $entityId);
+						$data['mvSupplierClient']['SupplierClientID'] = $entityId;
+						$data['mvRecordAction'] = 'Update';
+						$json_result = $helper->makeJsonRequest($data ,'SupplierClientUpdate',$customer->getId());
+						return $entityId;
+					}
 				}
 			}
 		}

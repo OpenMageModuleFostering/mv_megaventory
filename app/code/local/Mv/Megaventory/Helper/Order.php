@@ -196,6 +196,11 @@ class Mv_Megaventory_Helper_Order extends Mage_Core_Helper_Abstract
 					
 					$productHelper = Mage::helper('megaventory/product');
 					$megaventoryProductId = $productHelper->addProduct($product);
+					
+					if (is_array($megaventoryProductId)){
+						$megaventoryProductId = $megaventoryProductId['mvProductId'];
+						$productHelper->undeleteProduct($megaventoryProductId);
+					}
 				}
 				else
 					$megaventoryProductId = $id;
@@ -374,7 +379,9 @@ class Mv_Megaventory_Helper_Order extends Mage_Core_Helper_Abstract
 		
 		$tags = trim($tags); */
 		
-		
+		$magentoInstallationId = Mage::getStoreConfig('megaventory/general/magentoid');
+		if (!isset($magentoInstallationId))
+			$magentoInstallationId = "MagentoCommunity";
 		
 		$data = array (
 				'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'), 
@@ -382,7 +389,7 @@ class Mv_Megaventory_Helper_Order extends Mage_Core_Helper_Abstract
 								array (
 										'SalesOrderNo' => $increment_id, 
 										'SalesOrderReferenceNo' => $increment_id,
-										'SalesOrderReferenceApplication' => 'MagentoCommunity',
+										'SalesOrderReferenceApplication' => $magentoInstallationId,//magento, magento-2 ...
 										//always insert orders in base currency
 										'SalesOrderCurrencyCode' => $baseCurrencyCode,
 										//'SalesOrderCurrencyCode' => $orderCurrencyCode, 

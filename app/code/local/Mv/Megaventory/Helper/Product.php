@@ -29,6 +29,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		{
 			
 			$productId = $product->getEntityId();
+			$product = Mage::getModel('catalog/product')->load($productId);
 			$megaVentoryId = $product->getData('mv_product_id');
 			$name = $product['name'];
 			$sku = $product['sku'];
@@ -260,12 +261,22 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 			}
 			else
 			{
-				$entityId = $json_result['entityID']; //if product exists just sync them
-				if (!empty($entityId) && $entityId > 0){
-					$this->updateProduct($productId,$entityId);
-					$data['mvProduct']['ProductID'] = $entityId;
-					$data['mvRecordAction'] = 'Update';
-					$json_result = $helper->makeJsonRequest($data ,'ProductUpdate',$productId);
+				$entityId = $json_result['entityID'];
+				if (!empty($entityId) && $entityId > 0){ 
+					if (strpos( $json_result['ResponseStatus']['Message'], 'and was since deleted') !== false) {
+						$result = array(
+								'mvProductId' => $json_result['entityID'],
+								'errorcode' => 'isdeleted'
+						);
+						return $result;
+					}
+					else
+					{
+						$this->updateProduct($productId,$entityId);
+						$data['mvProduct']['ProductID'] = $entityId;
+						$data['mvRecordAction'] = 'Update';
+						$json_result = $helper->makeJsonRequest($data ,'ProductUpdate',$productId);
+					}
 				}
 			}
 		}
@@ -523,11 +534,11 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		->addAttributeToSort('type_id','ASC');
 		
 		
-		$simple_products->setPageSize(100);
+		$simple_products->setPageSize(20);
 		$simple_products->setCurPage($page);
 		$totalCollectionSize = $simple_products->getSize();
 		$isLastPage = false;
-		if ((int)($totalCollectionSize/100) == $page-1)
+		if ((int)($totalCollectionSize/20) == $page-1)
 			$isLastPage = true;
 		/* if (isset($supplierAttributeId) && $supplierAttributeId != false)
 			$simple_products->addAttributeToSelect($supplier); */
@@ -1357,5 +1368,14 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		$write->query($sql_insert);
 	}
 	
-	
+	public function undeleteProduct($mvProductId){
+		$data = array(
+				'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+				'ProductIDToUndelete' => $mvProductId
+		);
+		
+		$helper = Mage::helper('megaventory');
+		
+		$helper->makeJsonRequest($data, 'ProductUndelete');
+	}
 }

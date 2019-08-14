@@ -2,7 +2,7 @@
 <config>
 	<modules>
 		<Mv_Megaventory>
-			<version>2.1.0</version>
+			<version>2.2.0</version>
 		</Mv_Megaventory>
 	</modules>
 	<crontab>
@@ -62,8 +62,9 @@
 			<adminhtml>
 				<args>
 					<modules>
-						<Mv_Megaventory before="Mage_Adminhtml">Mv_Megaventory
-						</Mv_Megaventory>
+						<!-- <Mv_Megaventory before="Mage_Adminhtml">Mv_Megaventory
+						</Mv_Megaventory> -->
+						<megaventory after="Mage_Adminhtml">Mv_Megaventory_Adminhtml</megaventory>
 					</modules>
 				</args>
 			</adminhtml>
@@ -317,6 +318,7 @@
 			<feed>
 				<check_frequency>86400</check_frequency>
 			</feed>
+			
 		</megaventory>
 	</default>
 </config>

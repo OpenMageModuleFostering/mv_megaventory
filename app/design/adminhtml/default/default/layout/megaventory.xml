@@ -74,4 +74,13 @@
         </reference>
     </adminhtml_sales_order_index>
     
+    <default>
+    	<reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+    </default>
+    
 </layout>

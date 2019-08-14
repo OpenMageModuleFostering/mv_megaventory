@@ -29,6 +29,9 @@ $syncTimestamp = $this->getSettingValue('synctimestamp');
 
 $connectivityOk = $this->connectivityOk();
 
+$magentoInstallations = $this->getMagentoInstallations();
+$magentoId = $this->getSettingValue('magentoid');
+
 if ($connectivityOk !== true){
 	$actionsDisabled = ' disabled ';
 	$buttonOnClick = ' onclick="" ';
@@ -185,6 +188,25 @@ else{
 						<legend>Setup Wizard</legend>
 				<?php if(empty($syncTimestamp)){ ?>
 					<table class="form-list" style="width:100%">
+							<tr>
+								<td width="50%" class="label"><label
+									for="megaventory_magento_id-id">Magento Id<span class="required">*</span>
+								</label></td>
+								<td class="value">
+									<select id="megaventory_magento_id-id" name="" <?php if ($magentoInstallations <= 0) echo 'disabled'?>>
+										<?php 
+										for ($i = 0; $i < $magentoInstallations; $i++)
+										{
+											$value = ($i>0) ? 'magento-'.$i : 'magento';
+										?>
+										<option value="<?php echo $value ?>" <?php if ($magentoId == $value) echo 'selected' ?>>
+											<?php echo 'magento-'.$i ?>
+										</option>
+										<?php 
+										}?>
+									</select>
+								</td>
+							</tr>
 							<tr>
 								<td width="50%" class="label"><label
 									for="megaventory_shipping_sku-id"> Shipping Product SKU<span class="required">*</span>
@@ -357,6 +379,31 @@ else{
 						</table>
 					<?php } else {?>
 					<table class="form-list" style="width:100%">
+							<tr>
+								<td width="50%" class="label"><label
+									for="megaventory_magento_id-id">Magento Id<span class="required">*</span>
+								</label></td>
+								<td class="value">
+									<select id="megaventory_magento_id-id" name="" <?php if ($magentoInstallations <= 0) echo 'disabled'?>>
+									<?php 
+									for ($i = 0; $i < $magentoInstallations; $i++)
+									{
+										$value = ($i>0) ? 'magento-'.$i : 'magento';
+									?>
+									<option value="<?php echo $value ?>" <?php if ($magentoId == $value) echo 'selected' ?>>
+										<?php echo 'magento-'.$i ?>
+									</option>
+									<?php 
+									}?>
+								</select>
+								<?php if(!empty($syncTimestamp) && $connectivityOk === true){ ?>
+									<button id="save-config-btn" type="button"
+										onclick="updateMagentoId()">
+										<span>Update</span>
+									</button>
+								<?php } ?>
+								</td>
+							</tr>
 							<tr>
 								<td class="label"><label
 									for="megaventory_shipping_sku-id"> Shipping Product SKU<span class="required">*</span>
@@ -753,6 +800,7 @@ function syncData()
         parameters: {
             shippingSKU: $('megaventory_shipping_sku-id').value, 
             discountSKU: $('megaventory_discount_sku-id').value,
+            magentoId: $('megaventory_magento_id-id').value,
             magento_supplier_code: $('megaventory_supplier-id').value
         },
         onSuccess: function(transport) {
@@ -982,6 +1030,23 @@ function updateSupplierSettings(){
 	        	alert(result.message);
             }
         	location = '<?php echo $indexURL ?>';
+        }
+    });
+}
+
+function updateMagentoId(){
+	url = "<?php echo Mage::helper("adminhtml")->getUrl("megaventory/index/updateMagentoId") ?>";
+	new Ajax.Request(url, {
+		parameters:  
+			{
+				'magento_id' : $('megaventory_magento_id-id').value
+			},
+        onSuccess: function(transport) {
+            if (transport.responseText){
+	        	var result = transport.responseText.evalJSON();
+	        	
+	        	alert(result.message);
+            }
         }
     });
 }

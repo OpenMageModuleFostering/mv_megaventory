@@ -54,7 +54,8 @@ class Mv_Megaventory_Helper_Suppliers extends Mage_Core_Helper_Abstract
 						'SupplierClientTaxID' => '',
 						'SupplierClientComments' => '',
  						),
-				'mvRecordAction' => 'Insert' );
+				'mvRecordAction' => 'Insert',
+				'mvGrantPermissionsToAllUsers' => true );
 		
 		$json_result = $helper->makeJsonRequest($data, 'SupplierClientUpdate',0);
 		

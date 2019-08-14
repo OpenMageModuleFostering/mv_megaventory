@@ -8,6 +8,7 @@ class Mv_Megaventory_Block_Adminhtml_Megaventorysettings extends Mage_Core_Block
 	private $_defaultMagentoCurrency;
 	private $_defaultMegaventoryCurrency;
 	private $_mvConnectivity = false;
+	private $_magentoInstallations = false;
 	
 	public function __construct()
 	{
@@ -19,6 +20,12 @@ class Mv_Megaventory_Block_Adminhtml_Megaventorysettings extends Mage_Core_Block
 		$this->_defaultMegaventoryCurrency = $this->setDefaultMegaventoryCurrency();
 		
 		$this->_defaultMagentoCurrency = Mage::getStoreConfig('currency/options/default');
+		
+		if ($this->_mvConnectivity !== false){
+			$megaventoryHelper = Mage::helper('megaventory');
+			$setting = $megaventoryHelper->getMegaventoryAccountSettings('MagentoInstallations');
+			$this->_magentoInstallations = $setting['0']['SettingValue'];
+		}
 		
 		parent::__construct();
 	}
@@ -61,6 +68,11 @@ class Mv_Megaventory_Block_Adminhtml_Megaventorysettings extends Mage_Core_Block
 		return $this->_mvConnectivity;
 	}
 
+	public function getMagentoInstallations()
+	{
+		return $this->_magentoInstallations;
+	}
+		
 	public function checkBaseCurrencies()
 	{
 		if ($this->_defaultMagentoCurrency != $this->_defaultMegaventoryCurrency)

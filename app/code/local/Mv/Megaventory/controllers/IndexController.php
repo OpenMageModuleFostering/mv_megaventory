@@ -70,9 +70,12 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 	{
 		$shippingSKU = $this->getRequest()->getPost('shippingSKU');
 		$discountSKU = $this->getRequest()->getPost('discountSKU');
+		$magentoId = $this->getRequest()->getPost('magentoId');
+		
 		$config = Mage::getConfig();
 		$config->saveConfig('megaventory/general/shippingproductsku',$shippingSKU);
 		$config->saveConfig('megaventory/general/discountproductsku',$discountSKU);
+		$config->saveConfig('megaventory/general/magentoid',$magentoId);
 	
 		//add supplier attribute in config data
 		$magentoSupplierAttributeCode = $this->getRequest()->getPost('magento_supplier_code');
@@ -226,59 +229,21 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		die();
 	}
 	
-	/*
-	 $supplier = $this->getRequest()->getParam('supplierattribute');
-	
-	if (!empty($supplier))
+	public function updateMagentoIdAction()
 	{
-	$attributeId = Mage::getResourceModel('eav/entity_attribute')
-	->getIdByCode('catalog_product',$supplier);
+		$magentoId = $this->getRequest()->getPost('magento_id');
+		$config = Mage::getConfig();
+		if (!empty($magentoId)){
+			$config->saveConfig('megaventory/general/magentoid',$magentoId);
+			
+			$result = array(
+					'message'=>'Magento Id updated successfully!'
+			);
+			echo json_encode($result) . PHP_EOL;
+		}
 		
-	if ($attributeId == false){
-	$megaventoryHelper->sendProgress(time(),'No Suppliers found with this attribute code. Proceeding to next step', '0', 'suppliers');
+		die();
 	}
-	else {
-	Mage::getConfig()->saveConfig('megaventory/general/defaultsupplierattribute',$supplier);
-	
-	$totalSteps += 1;
-	$megaventoryHelper->sendProgress(time(), 'Step '.$step.'/'.$totalSteps.'<br/>Importing Suppliers to Megaventory', '0', 'suppliers');
-	$supplierHelper = Mage::helper('megaventory/suppliers');
-	$supplierHelper->importSuppliersToMegaventory($attributeId,$megaventoryHelper);
-	$step++;
-	}
-	} */
-	
-	//add role
-	/* $role = Mage::getModel('api/roles')->load(false);
-	 $role = $role
-	->setName('megaventory')
-	->setPid(false)
-	->setRoleType('G')
-	->save();
-	$resource = array("all");
-	Mage::getModel("api/rules")
-	->setRoleId($role->getId())
-	->setResources($resource)
-	->saveRel();
-	$rid = $role->getId();
-	
-	//add user
-	$user = Mage::getModel('api/user')->load(false);
-	$user->setUsername('megaventory');
-	$user->setFirstname('Mega');
-	$user->setLastname('Ventory');
-	$user->setEmail('info@megaventory.com');
-	$user->setApi_key('megaventory24');
-	$user->setApi_key_confirmation('megaventory24');
-	$user->setIs_active('1');
-	try{
-	$user->save();
-	$uRoles = array('0'=>$rid);
-	$user->setRoleIds($uRoles)
-	->setRoleUserId($user->getUserId())
-	->saveRelations();
-	}
-	catch(Exception $e){} */
 	
 	public function syncDataAction()
 	{
@@ -527,6 +492,7 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 		Mage::getConfig()->deleteConfig('megaventory/general/synctimestamp/');
 		Mage::getConfig()->deleteConfig('megaventory/general/shippingproductsku');
 		Mage::getConfig()->deleteConfig('megaventory/general/discountproductsku');
+		Mage::getConfig()->deleteConfig('megaventory/general/magentoid');
 		Mage::getConfig()->deleteConfig('megaventory/general/supplierattributecode');
 		Mage::getConfig()->deleteConfig('megaventory/general/defaultguestid');
 		Mage::getConfig()->deleteConfig('megaventory/general/setupreport');
@@ -638,6 +604,38 @@ class Mv_Megaventory_IndexController extends Mage_Adminhtml_Controller_Action
 			if ($quote->getId())
 				Mage::helper('megaventory/order')->addOrder($order,$quote);
 		}
+		
+		die();
+	}
+	
+	public function undeleteEntityAction()
+	{
+		$mvId = $this->getRequest()->getPost('mvId');
+		$mvEntityType = $this->getRequest()->getPost('mvEntityType');
+		
+		if ($mvEntityType == 'product'){
+			$idString = 'ProductIDToUndelete';
+			$operation = 'ProductUndelete';
+		}
+		
+		if ($mvEntityType == 'category'){
+			$idString = 'ProductCategoryIDToUndelete';
+			$operation = 'ProductCategoryUndelete';
+		}
+		
+		if ($mvEntityType == 'supplierclient'){
+			$idString = 'SupplierClientIDToUndelete';
+			$operation = 'SupplierClientUndelete';
+		}
+	
+		$data = array(
+				'APIKEY' => Mage::getStoreConfig('megaventory/general/apikey'),
+				$idString => $mvId
+				);
+		
+		$helper = Mage::helper('megaventory');
+		
+		$json_result = $helper->makeJsonRequest($data, $operation);
 		
 		die();
 	}

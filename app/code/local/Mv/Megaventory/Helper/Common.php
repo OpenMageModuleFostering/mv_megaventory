@@ -35,6 +35,7 @@ class Mv_Megaventory_Helper_Common
 		else
 		{
 			$message = '';
+			$magentoInstallationsIsSet = false;
 			foreach ($accountSettings as $index => $accountSetting) {
 				$settingName = $accountSetting['SettingName'];
 				$settingValue = $accountSetting['SettingValue'];
@@ -59,8 +60,19 @@ class Mv_Megaventory_Helper_Common
 				} */
 				if ($settingName == 'isOrdersModuleEnabled' && $settingValue == false)
 					$message .= 'Ordering module in Megaventory is not enabled.';
+
+				if ($settingName == 'MagentoInstallations')
+					$magentoInstallationsIsSet = true;
+				
+				if ($settingName == 'MagentoInstallations' && $settingValue == 0)
+					$magentoInstallationsIsSet = false;
+				
 				
 			}
+			if (!$magentoInstallationsIsSet){
+				$message .= "You haven't set in Megaventory the number of your active Magento installations.";
+			}
+			
 			if (strlen($message) > 0){
 				return $message;
 			}

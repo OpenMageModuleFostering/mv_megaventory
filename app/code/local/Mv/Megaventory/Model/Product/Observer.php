@@ -13,8 +13,39 @@ class Mv_Megaventory_Model_Product_Observer {
 		if ($startsWith && empty($megaventoryId)) //it is an insert of a bom and we should ignore
 			return;
 		
-		$productHelper->addProduct($product);
+		$result = $productHelper->addProduct($product);
 		
+		if ($result == 0){
+			$logUrl = Mage::helper("adminhtml")->getUrl("megaventory/index/log");
+			Mage::getSingleton('core/session')->addError('Product '.$product->getId().' did not updated in Megaventory. Please review <a href="'.$logUrl.'" target="_blank">Megaventory Log</a> for details');
+		}
+		
+		if (is_array($result)){
+			//$logUrl = Mage::helper("adminhtml")->getUrl("megaventory/index/log");
+			Mage::getSingleton('core/session')->addError('Product with SKU '.$product->getSku().' is flagged as deleted in Megaventory. Presse <a onclick="MegaventoryManager.undeleteEntity(\'' . Mage::helper("adminhtml")->getUrl('megaventory/index/undeleteEntity')  .'\','.$result['mvProductId'].',\'product\')" href="javascript:void(0);">here</a> if you want to automatically undelete it');
+		}
+	}
+	
+	public function onMassProductUpdate($observer) {
+		$event = $observer->getEvent ();
+	
+		$indexModelEvent = $event->getObject();
+	
+		$entityType= $indexModelEvent->getData('entity');
+		$actionType = $indexModelEvent->getData('type');
+		if ($entityType == 'catalog_product' && $actionType == 'mass_action'){
+			$dataObject = $indexModelEvent->getData('data_object');
+			if ($dataObject){
+				$productIds = $dataObject->getData('product_ids');
+				if (isset($productIds) && count($productIds) >0 ){
+					$productHelper = Mage::helper('megaventory/product');
+					foreach ($productIds as $productId){
+						$product = Mage::getModel('catalog/product')->load($productId);
+						$productHelper->addProduct($product);
+					}
+				}
+			}
+		}
 	}
 	
 	public function onProductImport($observer) {
@@ -98,13 +129,13 @@ class Mv_Megaventory_Model_Product_Observer {
 		$domain = '.megaventory.com';
 		
 		$links = 'View all ';
-		//$links .=  '<a href="https://'.$subDomain.$domain.'/inventory/Maintainance/ProductEdit.aspx?id='.$mvProduct['ProductID'].'" target="_blank">Product Page</a><br/>';
-		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/Invoices/InvoiceList.aspx?sText='.$mvProduct['ProductSKU'].'" target="_blank">Transactions</a>, ';
-		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/Ordering/PurchaseOrdersList.aspx?sText='.$mvProduct['ProductSKU'].'" target="_blank">Purchase Orders</a>, ';
-		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/Ordering/SalesOrdersList.aspx?sText='.$mvProduct['ProductSKU'].'" target="_blank">Sales Orders</a>, ';
-		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/Ordering/SalesQuotesList.aspx?sText='.$mvProduct['ProductSKU'].'" target="_blank">Sales Quotes</a> ';
+		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/?grid=sales_documents&id=0&productsku='.$mvProduct['ProductSKU'].'" target="_blank">Sales Documents</a>, ';
+		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/?grid=purchase_documents&id=0&productsku='.$mvProduct['ProductSKU'].'" target="_blank">Purchase Documents</a>, ';
+		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/?grid=purchase_orders&id=0&productsku='.$mvProduct['ProductSKU'].'" target="_blank">Purchase Orders</a>, ';
+		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/?grid=sales_orders&id=0&productsku='.$mvProduct['ProductSKU'].'" target="_blank">Sales Orders</a>, ';
+		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/?grid=sales_quotes&id=0&productsku='.$mvProduct['ProductSKU'].'" target="_blank">Sales Quotes</a> ';
 		$links .= 'with this SKU or ';
-		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/Stock/WarehouseStock.aspx?sText='.$mvProduct['ProductSKU'].'" target="_blank">Set Alert Levels for this SKU</a>';
+		$links .= '<a href="https://'.$subDomain.$domain.'/inventory/?grid=local_inventory&id=0&productsku='.$mvProduct['ProductSKU'].'" target="_blank">Set Alert Levels for this SKU</a>';
 		
 		$noticeSKU = '';
 		if ($mvProduct['ProductSKU'] != $product->getSku())

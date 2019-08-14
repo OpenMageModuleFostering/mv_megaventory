@@ -53,7 +53,17 @@ class Mv_Megaventory_Model_Category_Observer {
 				{
 					$entityId = $json_result['entityID'];//if category exists just sync them
 					if (!empty($entityId) && $entityId > 0){
-						$this->updateCategory($category->getId(), $entityId);
+						if (strpos( $json_result['ResponseStatus']['Message'], 'in the past and was deleted') !== false) {
+							$result = array(
+									'mvCategoryId' => $json_result['entityID'],
+									'errorcode' => 'isdeleted'
+							);
+							Mage::getSingleton('core/session')->addError('Category '.$name.' is flagged as deleted in Megaventory. Presse <a onclick="MegaventoryManager.undeleteEntity(\'' . Mage::helper("adminhtml")->getUrl('megaventory/index/undeleteEntity')  .'\','.$result['mvCategoryId'].',\'category\')" href="javascript:void(0);">here</a> if you want to automatically undelete it');
+						}
+						else
+						{
+							$this->updateCategory($category->getId(), $entityId);
+						}
 					}
 				}
 					
@@ -178,6 +188,20 @@ class Mv_Megaventory_Model_Category_Observer {
 				
 			$json_result = $helper->makeJsonRequest($data, 'ProductCategoryUpdate',$category->getEntityId());
 		
+			$errorCode = $json_result['ResponseStatus']['ErrorCode'];
+			if ($errorCode != '0'){//no errors
+			
+				$entityId = $json_result['entityID'];//if category exists just sync them
+				if (!empty($entityId) && $entityId > 0){
+					if (strpos( $json_result['ResponseStatus']['Message'], 'in the past and was deleted') !== false) {
+						$result = array(
+								'mvCategoryId' => $json_result['entityID'],
+								'errorcode' => 'isdeleted'
+						);
+						Mage::getSingleton('core/session')->addError('Category '.$name.' is flagged as deleted in Megaventory. Presse <a onclick="MegaventoryManager.undeleteEntity(\'' . Mage::helper("adminhtml")->getUrl('megaventory/index/undeleteEntity')  .'\','.$result['mvCategoryId'].',\'category\')" href="javascript:void(0);">here</a> if you want to automatically undelete it');
+					}
+				}
+			}
 		}
 		
 		$children = $this->getChildrenCategories($category);

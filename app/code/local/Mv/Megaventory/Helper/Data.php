@@ -89,8 +89,9 @@ class Mv_Megaventory_Helper_Data extends Mage_Core_Helper_Abstract
 					//do not log gets
 					if (strpos($action,'Get') === false)
 					{
-					
-						$return_entity = implode("|",array_shift(array_values($json_result)));
+						$tmp = array_values($json_result);
+						$tmp2 = array_shift($tmp);
+						$return_entity = implode("|",$tmp2);
 						$event = array(
 								'code' => $action,
 								'result' => 'success',

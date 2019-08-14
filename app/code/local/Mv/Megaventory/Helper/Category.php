@@ -50,12 +50,12 @@ class Mv_Megaventory_Helper_Category extends Mage_Core_Helper_Abstract
 		$collection->addAttributeToSelect('entity_id');
 		$collection->addAttributeToSelect('name');
 		$collection->getSelect()->order('level');
-        $collection->setPageSize(100);
+        $collection->setPageSize(30);
         $collection->setCurPage($page);
 		$totalCollectionSize = $collection->getSize();
         
 		$isLastPage = false;
-        if ((int)($totalCollectionSize/100) == $page-1)
+        if ((int)($totalCollectionSize/30) == $page-1)
         	$isLastPage = true;
 		
 		
@@ -165,8 +165,18 @@ class Mv_Megaventory_Helper_Category extends Mage_Core_Helper_Abstract
 		{
 			$entityId = $json_result['entityID'];//if category exists just sync them
 			if (!empty($entityId) && $entityId > 0){
-				$this->updateCategory($category->getId(), $entityId);
-				return 1;
+				if (strpos( $json_result['ResponseStatus']['Message'], 'in the past and was deleted') !== false) {
+					$result = array(
+							'mvCategoryId' => $json_result['entityID'],
+							'errorcode' => 'isdeleted'
+					);
+					return $result;
+				}
+				else
+				{
+					$this->updateCategory($category->getId(), $entityId);
+					return 1;
+				}
 			}
 		}
 		

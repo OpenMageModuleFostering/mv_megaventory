@@ -68,5 +68,26 @@ var MegaventoryManager={
             	}
         	});
 
+    },
+	
+	undeleteEntity : function(url, mvId, mvEntityType){
+
+        new Ajax.Request(url, {
+
+            method:'post',
+
+            parameters : {
+                mvId: mvId,
+                mvEntityType : mvEntityType
+            },
+            onFailure: function() {
+                alert('An error occurred while undeleting entity.');
+            },
+
+            onSuccess : function(response){
+            	alert('Entity was undeleted successfully!Please press save again to update entity in Megaventory.');
+            	}
+        	});
+
     }
 }
