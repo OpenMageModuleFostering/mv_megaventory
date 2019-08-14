@@ -130,10 +130,9 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 			if (isset($parentIds) && isset($parentIds[0]))
 			{ 
 				$parentProduct = Mage::getModel('catalog/product')->load($parentIds[0]);
-				if (isset($parentProduct)){
+				if (isset($parentProduct) && $parentProduct->getType_id() == 'configurable'){
 					$simpleProduct = $product;
 					$product = $parentProduct;
-					
 					
 					$productAttributeOptions = $product->getTypeInstance(true)->getConfigurableAttributesAsArray($product);
 					$attributeOptions = array();
@@ -160,18 +159,22 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 			if (isset($product['short_description'])){
 				$shortDescription = $product['short_description'];
 				if (strlen($shortDescription) > 400)
-					$shortDescription = substr($shortDescription, 0, 400);
+					$shortDescription = mb_substr($shortDescription,0,400, "utf-8");
+					//$shortDescription = substr($shortDescription, 0, 399);
 			}
 			$description = '';
 			if (isset($product['description'])) 
 			{
 				$description = $product['description'];				
 				if (strlen($description) > 400)
-					$description = substr($description, 0, 400);
+					$description = mb_substr($description,0,400, "utf-8");
+					//$description = substr($description, 0, 399);
 			}
 			
 			try{
 				$image = $product->getImageUrl();
+				if (strlen($image) > 200)
+					$image = '';
 			}
 			catch(Exception $e)
 			{
@@ -314,19 +317,23 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		if (isset($product['short_description'])){
 			$shortDescription = $product['short_description'];
 			if (strlen($shortDescription) > 400)
-				$shortDescription = substr($shortDescription, 0, 400);
+				$shortDescription = mb_substr($shortDescription,0,400, "utf-8");
+				//$shortDescription = substr($shortDescription, 0, 400);
 		}
 		$description = '';
 		if (isset($product['description']))
 		{
 			$description = $product['description'];
 			if (strlen($description) > 400)
-				$description = substr($description, 0, 400);
+				$description = mb_substr($description,0,400, "utf-8");
+				//$description = substr($description, 0, 400);
 		}
 		
 		
 		try{
 			$image = $product->getImageUrl();
+			if (strlen($image) > 200)
+				$image = '';
 		}
 		catch(Exception $e)
 		{
@@ -531,6 +538,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 						array('attribute' => 'type_id', 'eq' => Mage_Catalog_Model_Product_Type::TYPE_SIMPLE),
 						array('attribute' => 'type_id', 'eq' => Mage_Catalog_Model_Product_Type::TYPE_VIRTUAL)
 				))
+		->addAttributeToSort('entity_id','ASC')
 		->addAttributeToSort('type_id','ASC');
 		
 		
@@ -593,6 +601,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 	public function insertSingleProduct($product)
 	{
 		$productId = $product->getEntityId();
+		Mage::log('product id = '.$productId,null,'megaventory.log');
 		$product = Mage::getModel('catalog/product')->load($productId);
 		
 		$megaVentoryId = $product->getData('mv_product_id');
@@ -610,7 +619,9 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		$orderHelper = Mage::helper('megaventory/order');
 		$finalPriceNoTax = $orderHelper->getPrice($product, $product->getFinalPrice());
 		
-			
+
+		Mage::log('final price = '.$finalPriceNoTax,null,'megaventory.log');
+		
 		if (isset($product['cost']) == false)
 			$cost = '0';
 		else
@@ -695,7 +706,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		if (isset($parentIds) && isset($parentIds[0]))
 		{
 			$parentProduct = Mage::getModel('catalog/product')->load($parentIds[0]);
-			if (isset($parentProduct)){
+			if (isset($parentProduct) && $parentProduct->getType_id() == 'configurable'){
 				$simpleProduct = $product;
 				$product = $parentProduct;
 					
@@ -724,18 +735,22 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 		if (isset($product['short_description'])){
 			$shortDescription = $product['short_description'];
 			if (strlen($shortDescription) > 400)
-				$shortDescription = substr($shortDescription, 0, 400);
+				$shortDescription = mb_substr($shortDescription,0,400, "utf-8");
+				//$shortDescription = substr($shortDescription, 0, 400);
 		}
 		$description = '';
 		if (isset($product['description']))
 		{
 			$description = $product['description'];
 			if (strlen($description) > 400)
-				$description = substr($description, 0, 400);
+				$description = mb_substr($description,0,400, "utf-8");
+				//$description = substr($description, 0, 400);
 		}
 		
 		try{
 			$image = $product->getImageUrl();
+			if (strlen($image) > 200)
+				$image = '';
 		}
 		catch(Exception $ex)
 		{
@@ -811,7 +826,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 				$mvProductId = $json_result['mvProduct']['ProductID'];
 				
 				//update alert level
-				$stockItem = $product->getStock_item();
+				/* $stockItem = $product->getStock_item();
 				$quantity = '0';
 				$alertLevel = 0;
 				
@@ -854,7 +869,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 				$productStock->setProduct_id($productId);
 				$productStock->setInventory_id($inventory->getId());
 				$productStock->setStockalarmqty($alertLevel);
-				$productStock->save();
+				$productStock->save(); */
 				
 			}
 		}
@@ -866,7 +881,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 				$mvProductId = $entityId;
 				
 				//update alert level
-				$stockItem = $product->getStock_item();
+				/* $stockItem = $product->getStock_item();
 				$quantity = '0';
 				$alertLevel = 0;
 				
@@ -909,7 +924,7 @@ class Mv_Megaventory_Helper_Product extends Mage_Core_Helper_Abstract
 				$productStock->setProduct_id($productId);
 				$productStock->setInventory_id($inventory->getId());
 				$productStock->setStockalarmqty($alertLevel);
-				$productStock->save();
+				$productStock->save(); */
 				
 				
 				return 1;
