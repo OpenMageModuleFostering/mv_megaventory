@@ -2,7 +2,7 @@
 <config>
 	<modules>
 		<Mv_Megaventory>
-			<version>2.0.0</version>
+			<version>2.0.1</version>
 		</Mv_Megaventory>
 	</modules>
 	<crontab>
@@ -105,6 +105,11 @@
 	               </bom>
 	            </entities>  
 	        </megaventory_mysql4>
+			<importexport>
+				<rewrite>
+					<import_entity_customer_address>Mv_Megaventory_Model_Import_Entity_Customer_Address</import_entity_customer_address>
+				</rewrite>
+			</importexport>
 		</models>
         <helpers>
             <megaventory>
@@ -277,6 +282,15 @@
 					</megaventory>
 				</observers>
 			</sales_order_status_history_save_commit_after>
+			<catalog_product_import_finish_before>
+				<observers>
+					<megaventory>
+						<type>singleton</type>
+						<class>Mv_Megaventory_Model_Product_Observer</class>
+						<method>onProductImport</method>
+					</megaventory>
+				</observers>
+			</catalog_product_import_finish_before>
 		</events>
 		
 		<blocks>

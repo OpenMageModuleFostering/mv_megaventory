@@ -12,6 +12,10 @@
 			                  	<title>Settings</title>
 			                  	<action>megaventory/index/index</action>
 			                  </megaventorysettings>
+			                  <megaventorypendingupdates>
+			                  	<title>Pending Updates</title>
+			                  	<action>megaventory/index/updates</action>
+			                  </megaventorypendingupdates>
 			                  <megaventorylog>
 			                  	<title>Log</title>
 			                  	<action>megaventory/index/log</action>

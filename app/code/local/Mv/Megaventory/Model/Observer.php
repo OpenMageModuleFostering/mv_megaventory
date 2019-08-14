@@ -134,6 +134,14 @@ class Mv_Megaventory_Model_Observer
 						}
 						else if ($mvIntegrationUpdate['Action'] == 'invoice'){
 							$invoiceIncrementId = $invoiceApi->create($orderIncrementId, null);
+							
+							$invoice = Mage::getModel('sales/order_invoice')->loadByIncrementId($invoiceIncrementId);
+								
+							if ($invoice->canCapture()) {
+								$invoiceApi->capture($invoiceIncrementId);
+								Mage::log('captured invoice : '.$invoiceIncrementId,null,'mv_cron.log');
+							}
+							
 							$result = $invoiceIncrementId;
 							Mage::log('result : '.$result,null,'mv_cron.log');
 							if ($result) 
@@ -150,7 +158,13 @@ class Mv_Megaventory_Model_Observer
 							}
 						}
 						else if ($mvIntegrationUpdate['Action'] == 'ship'){
-							$shipmentIncrementId = $shipmentApi->create($orderIncrementId);
+							$jsonData = $mvIntegrationUpdate['JsonData'];
+							$extraShippingInformation = json_decode($jsonData, true);
+							if ($extraShippingInformation['Notify'] == '1') //then also send a shipment email
+								$shipmentIncrementId = $shipmentApi->create($orderIncrementId,null,'',true,false);
+							else								
+								$shipmentIncrementId = $shipmentApi->create($orderIncrementId);
+							
 							$result = $shipmentIncrementId;
 							Mage::log('result : '.$result,null,'mv_cron.log');
 							if ($result){
@@ -170,7 +184,25 @@ class Mv_Megaventory_Model_Observer
 						else if ($mvIntegrationUpdate['Action'] == 'track'){
 							$jsonData = $mvIntegrationUpdate['JsonData'];
 							
-							if ($jsonData)
+							$result = false;
+								
+							$shipmentIncrementId= "";
+							$order = Mage::getModel('sales/order')->loadByIncrementId($orderIncrementId);
+							$orderId = $order->getId();
+								
+							$filters = array(
+									"order_id" => $orderId
+							);
+							$shipments = $shipmentApi->items($filters);
+							
+							if (count($shipments) > 0 )
+							{
+								$shipment = $shipments[0];
+								$shipmentIncrementId = $shipment['increment_id'];
+								Mage::log('order has shipment with id : '.$shipmentIncrementId,null,'mv_cron.log');
+							}
+							
+							if ($jsonData && !empty($shipmentIncrementId))
 							{
 								$trackingInformation = json_decode($jsonData, true);
 								$result = $mvApi->megaventoryAddTrack($shipmentIncrementId, 'custom', $trackingInformation['ShippingProviderName'],

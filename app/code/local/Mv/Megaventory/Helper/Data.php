@@ -244,6 +244,11 @@ class Mv_Megaventory_Helper_Data extends Mage_Core_Helper_Abstract
 		$write->query($updateCategory);
 		$updateProduct = 'update '.$resource->getTableName('catalog_product_entity').' set mv_product_id = NULL';
 		$write->query($updateProduct);
+		
+		$updateSalesFlatOrder = 'update '.$resource->getTableName('sales_flat_order').' set mv_salesorder_id = NULL, mv_inventory_id = 0';
+		$write->query($updateSalesFlatOrder);
+		$updateSalesFlatOrderGrid = 'update '.$resource->getTableName('sales/order_grid').' set mv_inventory_id = 0';
+		$write->query($updateSalesFlatOrderGrid);
 	}
 	
 	public function getMegaventoryAccountSettings($settingName=false,$apikey = false, $apiurl = -1){

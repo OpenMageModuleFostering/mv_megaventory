@@ -17,6 +17,32 @@ class Mv_Megaventory_Model_Product_Observer {
 		
 	}
 	
+	public function onProductImport($observer) {
+		$event = $observer->getEvent ();
+		$adapter = $observer->getAdapter();
+		if ($adapter){
+			$productHelper = Mage::helper('megaventory/product');
+			$newSku = $adapter->getNewSku();
+			
+			foreach ($newSku as $sku => $skuValues) {
+				
+				$productId = $skuValues['entity_id'];
+				$product = Mage::getModel('catalog/product')->load($productId);
+			
+				if ($product->getId()){
+					$sku = $product->getSku();
+					$megaventoryId = $product->getData('mv_product_id');
+					$startsWith = $this->startsWith($sku, 'bom_');
+					if ($startsWith && empty($megaventoryId)) //it is an insert of a bom and we should ignore
+						return;
+				
+					$productHelper->addProduct($product);
+				}
+			}
+		}
+	
+	}
+	
 	public function onProductDelete($observer) {
 		$event = $observer->getEvent ();
 		$product = $event->getProduct ();

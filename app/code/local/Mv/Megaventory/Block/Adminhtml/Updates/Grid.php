@@ -80,6 +80,15 @@ class Mv_Megaventory_Block_Adminhtml_Updates_Grid extends Mage_Adminhtml_Block_W
 				)
 		);
 		
+		$this->addColumn('IntegrationUpdateDateTime',
+				array(
+						'header'=> $this->__('Update Timestamp (M-D-Y format)'),
+						'index' => 'IntegrationUpdateDateTime',
+						'filter' => false,
+						'sortable' => false
+				)
+		);
+		
 		/* $this->addColumn('JsonData',
 				array(
 						'header'=> $this->__('JsonData'),
@@ -126,6 +135,13 @@ class Mv_Megaventory_Block_Adminhtml_Updates_Grid extends Mage_Adminhtml_Block_W
 				$arraykeys = array_keys($mvIntegrationUpdate);
 				foreach ($arraykeys as $arraykey)
 				{
+					if ($arraykey == 'IntegrationUpdateDateTime'){
+						$updateDT = $mvIntegrationUpdate[$arraykey];
+						$updateDT = substr($updateDT, 6, 19);
+						$seconds = $updateDT / 1000;
+						date("d-m-Y", $seconds);
+						$mvIntegrationUpdate[$arraykey] = date("m-d-Y H:i:s T", $seconds);
+					}
 					$item->setData($arraykey,$mvIntegrationUpdate[$arraykey]);
 				}
 				$collection->addItem($item);
