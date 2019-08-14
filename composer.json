@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Mv_Megaventory",
+    "type": "magento-module",
+    "license": "GNU-General-Public-License-(GPL)",
+    "homepage": "",
+    "description": "Integrates your Magento store to Megaventory web-based ERP",
+    "authors": [
+    {
+        "name": "Megaventory Megaventory",
+        "email": "info@megaventory.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

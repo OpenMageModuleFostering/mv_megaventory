@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<config>
+    <api>
+        <resources>
+            <megaventory_services translate="title" module="megaventory">
+                <title>megaventory</title>
+                <model>megaventory/services_api</model>
+                <acl>megaventory/services</acl>
+                <methods>
+                    <updateMegaventoryStock translate="title" module="megaventory">
+                        <title>Update Megaventory Stock</title>
+                        <acl>megaventory/services/updatemegaventorystock</acl>
+                    </updateMegaventoryStock>
+                    <megaventoryAddTrack translate="title" module="sales">
+                        <title>Add new tracking number coming from Megaventory</title>
+                        <acl>megaventory/services/megaventoryaddtrack</acl>
+                    </megaventoryAddTrack>
+                </methods>
+                <faults module="megaventory">
+                    <multi_update_not_match>
+                        <code>101</code>
+                        <message>Quantity of product IDs and product data should match. Inventory was not updated.</message>
+                    </multi_update_not_match>
+                    <not_exists>
+                        <code>100</code>
+                        <message>Requested shipment not exists.</message>
+                    </not_exists>
+                    <data_invalid>
+                        <code>102</code>
+                        <message>Invalid data given. Details in error message.</message>
+                    </data_invalid>
+                </faults>
+            </megaventory_services>
+        </resources>
+        <resources_alias>
+            <services>megaventory_services</services>
+         </resources_alias>
+        <v2>
+            <resources_function_prefix>
+                <services>services</services>
+            </resources_function_prefix>
+        </v2>
+        <acl>
+            <resources>
+                <megaventory translate="title" module="megaventory">
+                    <title>megaventory</title>
+                    <sort_order>1</sort_order>
+                    <services translate="title" module="megaventory">
+                        <title>Services</title>
+                        <sort_order>2000</sort_order>
+                        <updatemegaventorystock  translate="title" module="megaventory">
+                        	<title>updateMegaventoryStock</title>
+                        </updatemegaventorystock>
+                        <megaventoryaddtrack  translate="title" module="megaventory">
+                        	<title>updateMegaventoryStock</title>
+                        </megaventoryaddtrack>
+                    </services>
+             	</megaventory>
+            </resources>
+        </acl>
+    </api>
+</config>

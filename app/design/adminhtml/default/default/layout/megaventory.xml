@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<layout>
+	<megaventory_index_index>
+        <reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+    </megaventory_index_index>
+
+    <megaventory_index_log>
+        <reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+        <reference name="content">
+            <block type="mv_megaventory/adminhtml_megaventorylog" name="mv_megaventory_megaventorylog" />
+        </reference>
+    </megaventory_index_log>
+    
+    <megaventory_index_inventories>
+        <reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+        <reference name="content">
+            <block type="mv_megaventory/adminhtml_inventories" name="mv_megaventory_inventories" />
+        </reference>
+    </megaventory_index_inventories>
+    
+    <megaventory_index_updates>
+        <reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+        <reference name="content">
+            <block type="mv_megaventory/adminhtml_updates" name="mv_megaventory_updates" />
+        </reference>
+    </megaventory_index_updates>
+    
+    <megaventory_index_processupdates>
+        <reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+        <reference name="content">
+            <block type="mv_megaventory/adminhtml_updates" name="mv_megaventory_updates" />
+        </reference>
+   	</megaventory_index_processupdates>
+    
+    <adminhtml_customer_edit>
+    	<reference name="customer_edit_tab_view">
+            <action method="setTemplate">
+               <template>megaventory/customer/tab/view.phtml</template>
+            </action>
+        </reference>
+    </adminhtml_customer_edit>
+    
+    <adminhtml_sales_order_index>
+        <reference name="head">
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>megaventory/scripts.js</name>
+            </action>    
+        </reference>
+    </adminhtml_sales_order_index>
+    
+</layout>
